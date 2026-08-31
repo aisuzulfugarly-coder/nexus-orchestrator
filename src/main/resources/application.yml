@@ -1,0 +1,65 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: nexus-orchestrator
+
+  # AI diagnostic (DLQ failure analysis) is not wired up yet - see CLAUDE.md.
+  # Spring AI's OpenAiAutoConfiguration eagerly instantiates its bean at startup
+  # and throws if no API key is set, which crashes the whole app. Disable it
+  # until the AI diagnostic step is actually implemented and a key is provided.
+  autoconfigure:
+    exclude: org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
+
+  # Database Ayarları (PostgreSQL)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nexus_db
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Apache Kafka Ayarları
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: nexus-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+  # Spring AI (OpenAI) - DLQ failure analysis
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.2
+
+# Resilience4j Parametrləri (Circuit Breaker & Retry)
+resilience4j:
+  retry:
+    instances:
+      webhookRetry:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+
+  circuitbreaker:
+    instances:
+      webhookCircuitBreaker:
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s

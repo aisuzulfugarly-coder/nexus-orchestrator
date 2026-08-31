@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus Orchestrator</title>
+<style>
+  :root{
+    --bg:#0b0f19;
+    --bg-alt:#121828;
+    --panel:#151d30;
+    --panel-2:#1b2438;
+    --border:#26314a;
+    --text:#e7ecf7;
+    --muted:#8b96b3;
+    --accent:#6c8bff;
+    --accent-2:#9b6cff;
+    --green:#3ddc97;
+    --amber:#ffc857;
+    --orange:#ff9f5a;
+    --red:#ff5c7a;
+    --purple:#c76cff;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(108,139,255,.15), transparent),
+      radial-gradient(1000px 500px at 110% 10%, rgba(155,108,255,.12), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1200px;margin:0 auto;padding:28px 20px 60px;}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .logo{
+    width:44px;height:44px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:18px;color:white;
+    box-shadow:0 8px 24px rgba(108,139,255,.35);
+  }
+  .brand h1{margin:0;font-size:20px;letter-spacing:.2px;}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:13px;}
+  .live{
+    display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
+    background:var(--panel);border:1px solid var(--border);padding:8px 14px;border-radius:999px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(61,220,151,.6);animation:pulse 2s infinite;}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(61,220,151,.55);}
+    70%{box-shadow:0 0 0 8px rgba(61,220,151,0);}
+    100%{box-shadow:0 0 0 0 rgba(61,220,151,0);}
+  }
+
+  .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px;}
+  @media (max-width:900px){.stats{grid-template-columns:repeat(3,1fr);}}
+  @media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr);}}
+  .stat{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px;position:relative;overflow:hidden;
+  }
+  .stat::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--bar,var(--accent));}
+  .stat .num{font-size:26px;font-weight:700;letter-spacing:-.5px;}
+  .stat .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin-top:4px;}
+
+  .grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;}
+  @media (max-width:960px){.grid{grid-template-columns:1fr;}}
+
+  .panel{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;
+  }
+  .panel h2{margin:0 0 14px;font-size:15px;display:flex;align-items:center;justify-content:space-between;}
+  .panel h2 span.hint{color:var(--muted);font-weight:400;font-size:12px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;color:var(--muted);font-weight:600;text-transform:uppercase;font-size:11px;
+    letter-spacing:.5px;padding:8px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--panel);
+  }
+  tbody td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tbody tr:hover{background:var(--panel-2);}
+  .table-scroll{max-height:520px;overflow:auto;border-radius:10px;}
+  .payload{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--muted);
+    max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+    font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+    border:1px solid transparent;
+  }
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .b-PENDING{color:var(--muted);background:rgba(139,150,179,.12);border-color:rgba(139,150,179,.3);}
+  .b-PROCESSING{color:var(--amber);background:rgba(255,200,87,.12);border-color:rgba(255,200,87,.3);}
+  .b-DELIVERED{color:var(--green);background:rgba(61,220,151,.12);border-color:rgba(61,220,151,.3);}
+  .b-RETRYING{color:var(--orange);background:rgba(255,159,90,.12);border-color:rgba(255,159,90,.3);}
+  .b-FAILED{color:var(--red);background:rgba(255,92,122,.12);border-color:rgba(255,92,122,.3);}
+  .b-SENT_TO_DLQ{color:var(--purple);background:rgba(199,108,255,.12);border-color:rgba(199,108,255,.3);}
+
+  .empty{color:var(--muted);text-align:center;padding:40px 10px;font-size:13px;}
+
+  form{display:flex;flex-direction:column;gap:10px;}
+  textarea{
+    width:100%;min-height:120px;resize:vertical;background:var(--bg-alt);color:var(--text);
+    border:1px solid var(--border);border-radius:10px;padding:12px;font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:12.5px;line-height:1.5;
+  }
+  textarea:focus{outline:none;border-color:var(--accent);}
+  .btn{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;border:none;
+    padding:11px 16px;border-radius:10px;font-weight:600;font-size:13.5px;cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(108,139,255,.35);}
+  .btn:active{transform:translateY(0);}
+  .btn.secondary{background:var(--panel-2);color:var(--text);border:1px solid var(--border);}
+  .msg{font-size:12.5px;padding:9px 12px;border-radius:8px;display:none;}
+  .msg.ok{display:block;background:rgba(61,220,151,.1);color:var(--green);border:1px solid rgba(61,220,151,.3);}
+  .msg.err{display:block;background:rgba(255,92,122,.1);color:var(--red);border:1px solid rgba(255,92,122,.3);}
+
+  .flow{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+  .flow-step{
+    display:flex;align-items:center;gap:10px;background:var(--bg-alt);border:1px solid var(--border);
+    border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--muted);
+  }
+  .flow-step b{color:var(--text);font-weight:600;}
+  .flow-arrow{color:var(--border);font-size:14px;padding-left:20px;}
+
+  .toolbar{display:flex;gap:8px;align-items:center;}
+  .toolbar .btn.secondary{padding:7px 12px;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">N</div>
+      <div>
+        <h1>Nexus Orchestrator</h1>
+        <p>Webhook ingest → Kafka → resilient delivery, canlı izləmə paneli</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="live"><span class="dot" id="live-dot"></span><span id="live-text">canlı</span></div>
+      <button class="btn secondary" id="refresh-btn">↻ Yenilə</button>
+      <button class="btn secondary" id="pause-btn">⏸ Dayandır</button>
+    </div>
+  </header>
+
+  <div class="stats" id="stats">
+    <!-- stat cards injected here -->
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Hadisələr <span class="hint" id="events-count">0 hadisə</span></h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Status</th>
+              <th>Payload</th>
+              <th>Hədəf</th>
+              <th>Cəhd</th>
+              <th>Yeniləndi</th>
+            </tr>
+          </thead>
+          <tbody id="events-body">
+            <tr><td colspan="6" class="empty">Yüklənir...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Test Webhook Göndər</h2>
+        <form id="send-form">
+          <textarea id="payload-input" spellcheck="false">{"event":"order.created","orderId":12345,"amount":99.90}</textarea>
+          <button type="submit" class="btn">🚀 Göndər</button>
+          <div class="msg" id="send-msg"></div>
+        </form>
+
+        <div class="flow">
+          <div class="flow-step">📩 <b>POST /api/v1/webhooks/ingest</b> — event DB-də PENDING kimi yazılır</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">📨 <b>Kafka: webhook-events</b> — event növbəyə atılır</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">⚙️ <b>WebhookConsumer</b> — hədəf servisə çatdırılır (Retry + Circuit Breaker)</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">✅ <b>DELIVERED</b> / ❌ <b>SENT_TO_DLQ</b> — son status DB-də saxlanılır</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATUS_ORDER = ["TOTAL","PENDING","PROCESSING","RETRYING","DELIVERED","FAILED","SENT_TO_DLQ"];
+const STATUS_LABEL = {
+  TOTAL:"Cəmi", PENDING:"Gözləyir", PROCESSING:"İşlənir", RETRYING:"Təkrar cəhd",
+  DELIVERED:"Çatdırıldı", FAILED:"Uğursuz", SENT_TO_DLQ:"DLQ-ya göndərildi"
+};
+const STATUS_BAR = {
+  TOTAL:"var(--accent)", PENDING:"var(--muted)", PROCESSING:"var(--amber)", RETRYING:"var(--orange)",
+  DELIVERED:"var(--green)", FAILED:"var(--red)", SENT_TO_DLQ:"var(--purple)"
+};
+
+let paused = false;
+let timer = null;
+
+function fmtDate(s){
+  if(!s) return "—";
+  const d = new Date(s);
+  if(isNaN(d.getTime())) return s;
+  return d.toLocaleTimeString('az-AZ',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadStats(){
+  const res = await fetch('/api/v1/events/stats');
+  const data = await res.json();
+  const container = document.getElementById('stats');
+  container.innerHTML = STATUS_ORDER.map(key => `
+    <div class="stat" style="--bar:${STATUS_BAR[key]}">
+      <div class="num">${data[key] ?? 0}</div>
+      <div class="lbl">${STATUS_LABEL[key]}</div>
+    </div>
+  `).join('');
+}
+
+async function loadEvents(){
+  const res = await fetch('/api/v1/events');
+  const events = await res.json();
+  const body = document.getElementById('events-body');
+  document.getElementById('events-count').textContent = events.length + ' hadisə';
+
+  if(events.length === 0){
+    body.innerHTML = '<tr><td colspan="6" class="empty">Hələ heç bir hadisə yoxdur — sağdakı formadan test webhook göndərin.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = events.map(ev => `
+    <tr>
+      <td>#${ev.id}</td>
+      <td><span class="badge b-${ev.status}">${STATUS_LABEL[ev.status] ?? ev.status}</span></td>
+      <td class="payload" title="${escapeHtml(ev.payload || '')}">${escapeHtml(ev.payload || '')}</td>
+      <td class="payload">${escapeHtml(ev.targetUrl || '—')}</td>
+      <td>${ev.retryCount ?? 0}</td>
+      <td>${fmtDate(ev.updatedAt)}</td>
+    </tr>
+  `).join('');
+}
+
+async function refreshAll(){
+  try{
+    await Promise.all([loadStats(), loadEvents()]);
+    setLive(true);
+  }catch(e){
+    setLive(false);
+  }
+}
+
+function setLive(ok){
+  const dot = document.getElementById('live-dot');
+  const text = document.getElementById('live-text');
+  dot.style.background = ok ? 'var(--green)' : 'var(--red)';
+  text.textContent = ok ? 'canlı' : 'bağlantı xətası';
+}
+
+function schedule(){
+  if(timer) clearInterval(timer);
+  timer = setInterval(() => { if(!paused) refreshAll(); }, 2500);
+}
+
+document.getElementById('refresh-btn').addEventListener('click', refreshAll);
+document.getElementById('pause-btn').addEventListener('click', (e) => {
+  paused = !paused;
+  e.target.textContent = paused ? '▶ Davam et' : '⏸ Dayandır';
+});
+
+document.getElementById('send-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('send-msg');
+  const payload = document.getElementById('payload-input').value;
+  msg.className = 'msg';
+  try{
+    const res = await fetch('/api/v1/webhooks/ingest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: payload
+    });
+    const data = await res.json();
+    if(res.ok){
+      msg.className = 'msg ok';
+      msg.textContent = `Göndərildi (event #${data.eventId})`;
+      refreshAll();
+    } else {
+      msg.className = 'msg err';
+      msg.textContent = 'Xəta: ' + (data.message || res.status);
+    }
+  }catch(err){
+    msg.className = 'msg err';
+    msg.textContent = 'Şəbəkə xətası: ' + err.message;
+  }
+});
+
+refreshAll();
+schedule();
+</script>
+</body>
+</html>
