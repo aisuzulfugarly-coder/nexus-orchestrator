@@ -1,5 +1,6 @@
 package com.nexus.nexusorchestrator.kafka;
 
+import com.nexus.nexusorchestrator.diagnostic.FailureDiagnosticService;
 import com.nexus.nexusorchestrator.entity.EventStatus;
 import com.nexus.nexusorchestrator.entity.WebhookEvent;
 import com.nexus.nexusorchestrator.repository.WebhookEventRepository;
@@ -19,9 +20,11 @@ public class WebhookConsumer {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final WebhookEventRepository eventRepository;
+    private final FailureDiagnosticService diagnosticService;
 
-    public WebhookConsumer(WebhookEventRepository eventRepository) {
+    public WebhookConsumer(WebhookEventRepository eventRepository, FailureDiagnosticService diagnosticService) {
         this.eventRepository = eventRepository;
+        this.diagnosticService = diagnosticService;
     }
 
     @KafkaListener(topics = "webhook-events", groupId = "nexus-group")
@@ -41,9 +44,12 @@ public class WebhookConsumer {
     public void fallbackDeliver(String eventId, String payload, Exception e) {
         System.err.println("CRITICAL: Hədəf servis cavab vermədi!");
         System.err.println("FALLBACK WORKER: Circuit Breaker / Retry işə düşdü. Səbəb: " + e.getMessage());
-        System.err.println("STATUS: Event DLQ növbəsinə atıldı və AI analizinə yönləndirildi.");
 
-        markSentToDlq(eventId);
+        String diagnosis = diagnosticService.diagnose(e);
+        System.err.println("AI DIAQNOSTIKA: " + diagnosis);
+        System.err.println("STATUS: Event DLQ növbəsinə atıldı.");
+
+        markSentToDlq(eventId, diagnosis);
     }
 
     private void markAttempt(String eventId) {
@@ -62,9 +68,10 @@ public class WebhookConsumer {
         });
     }
 
-    private void markSentToDlq(String eventId) {
+    private void markSentToDlq(String eventId, String diagnosis) {
         findEvent(eventId).ifPresent(event -> {
             event.setStatus(EventStatus.SENT_TO_DLQ);
+            event.setAiDiagnostic(diagnosis);
             eventRepository.save(event);
         });
     }

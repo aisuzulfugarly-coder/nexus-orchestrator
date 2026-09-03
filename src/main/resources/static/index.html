@@ -170,10 +170,11 @@
               <th>Hədəf</th>
               <th>Cəhd</th>
               <th>Yeniləndi</th>
+              <th>AI Diaqnostika</th>
             </tr>
           </thead>
           <tbody id="events-body">
-            <tr><td colspan="6" class="empty">Yüklənir...</td></tr>
+            <tr><td colspan="7" class="empty">Yüklənir...</td></tr>
           </tbody>
         </table>
       </div>
@@ -195,7 +196,7 @@
           <div class="flow-arrow">↓</div>
           <div class="flow-step">⚙️ <b>WebhookConsumer</b> — hədəf servisə çatdırılır (Retry + Circuit Breaker)</div>
           <div class="flow-arrow">↓</div>
-          <div class="flow-step">✅ <b>DELIVERED</b> / ❌ <b>SENT_TO_DLQ</b> — son status DB-də saxlanılır</div>
+          <div class="flow-step">✅ <b>DELIVERED</b> / ❌ <b>SENT_TO_DLQ</b> — son status DB-də saxlanılır (DLQ halında AI diaqnostikası əlavə olunur)</div>
         </div>
       </div>
     </div>
@@ -246,7 +247,7 @@ async function loadEvents(){
   document.getElementById('events-count').textContent = events.length + ' hadisə';
 
   if(events.length === 0){
-    body.innerHTML = '<tr><td colspan="6" class="empty">Hələ heç bir hadisə yoxdur — sağdakı formadan test webhook göndərin.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="empty">Hələ heç bir hadisə yoxdur — sağdakı formadan test webhook göndərin.</td></tr>';
     return;
   }
 
@@ -258,6 +259,7 @@ async function loadEvents(){
       <td class="payload">${escapeHtml(ev.targetUrl || '—')}</td>
       <td>${ev.retryCount ?? 0}</td>
       <td>${fmtDate(ev.updatedAt)}</td>
+      <td class="payload" title="${escapeHtml(ev.aiDiagnostic || '')}">${escapeHtml(ev.aiDiagnostic || '—')}</td>
     </tr>
   `).join('');
 }
