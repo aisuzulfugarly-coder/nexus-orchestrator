@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus Bank</title>
+<style>
+  :root{
+    --bg:#0b0f19; --panel:#151d30; --panel-2:#1b2438; --border:#26314a;
+    --text:#e7ecf7; --muted:#8b96b3; --accent:#6c8bff; --accent-2:#9b6cff;
+    --green:#3ddc97; --amber:#ffc857; --red:#ff5c7a; --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(108,139,255,.15), transparent),
+      radial-gradient(1000px 500px at 110% 10%, rgba(155,108,255,.12), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:32px 20px 60px;}
+
+  header{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
+  .logo{
+    width:46px;height:46px;border-radius:13px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+    box-shadow:0 8px 24px rgba(108,139,255,.35);
+  }
+  header h1{margin:0;font-size:19px;}
+  header p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
+  .back-link{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:6px 10px;border-radius:8px;}
+  .back-link:hover{color:var(--text);border-color:var(--accent);}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;}
+  .card h2{margin:0 0 16px;font-size:15px;}
+
+  .balance{font-size:34px;font-weight:700;letter-spacing:-.5px;margin:4px 0 2px;}
+  .balance-lbl{color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.5px;}
+
+  form{display:flex;flex-direction:column;gap:12px;margin-top:6px;}
+  label{font-size:12px;color:var(--muted);margin-bottom:-6px;}
+  input{
+    width:100%;background:#0f1526;color:var(--text);border:1px solid var(--border);
+    border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;
+  }
+  input:focus{outline:none;border-color:var(--accent);}
+  .btn{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:white;border:none;
+    padding:13px 16px;border-radius:10px;font-weight:700;font-size:14.5px;cursor:pointer;
+    margin-top:4px;transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(108,139,255,.35);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+  .history-item{
+    display:flex;align-items:center;justify-content:between;gap:10px;padding:11px 0;
+    border-bottom:1px solid var(--border);font-size:13px;
+  }
+  .history-item:last-child{border-bottom:none;}
+  .hi-left{flex:1;}
+  .hi-recipient{font-weight:600;}
+  .hi-time{color:var(--muted);font-size:11.5px;margin-top:2px;}
+  .hi-amount{font-weight:700;white-space:nowrap;}
+  .hi-status{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:3px 8px;border-radius:999px;margin-left:8px;}
+  .hi-status.ok{color:var(--green);background:rgba(61,220,151,.12);}
+  .hi-status.fail{color:var(--red);background:rgba(255,92,122,.12);}
+  .hi-status.pending{color:var(--muted);background:rgba(139,150,179,.12);}
+  .history-empty{color:var(--muted);text-align:center;padding:20px 0;font-size:13px;}
+
+  /* canlı gedişat overlay */
+  .tracker-overlay{
+    position:fixed;inset:0;background:rgba(5,8,15,.75);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .tracker-overlay.open{display:flex;}
+  .tracker-box{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    max-width:420px;width:100%;padding:26px 24px;text-align:center;
+  }
+  .tracker-amount{font-size:28px;font-weight:700;margin-bottom:2px;}
+  .tracker-recipient{color:var(--muted);font-size:13px;margin-bottom:22px;}
+
+  .tstep{display:flex;gap:12px;text-align:left;position:relative;padding-bottom:22px;}
+  .tstep:last-child{padding-bottom:0;}
+  .tstep::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--border);}
+  .tstep:last-child::before{display:none;}
+  .tstep-icon{
+    width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;flex-shrink:0;z-index:1;
+  }
+  .tstep-icon.ok{background:rgba(61,220,151,.15);color:var(--green);border:1px solid rgba(61,220,151,.4);}
+  .tstep-icon.fail{background:rgba(255,92,122,.15);color:var(--red);border:1px solid rgba(255,92,122,.4);}
+  .tstep-icon.wait{background:rgba(139,150,179,.15);color:var(--muted);border:1px solid rgba(139,150,179,.4);}
+  .tstep-icon.spin{background:transparent;border:2px solid rgba(255,200,87,.3);border-top-color:var(--amber);animation:spin .8s linear infinite;}
+  .tstep-body b{display:block;font-size:13px;margin-bottom:2px;}
+  .tstep-body span{font-size:11.5px;color:var(--muted);}
+  .tstep-diag{
+    margin-top:8px;background:#0f1526;border:1px solid rgba(255,92,122,.3);border-left:3px solid var(--red);
+    border-radius:8px;padding:9px 11px;font-size:12px;color:var(--text);white-space:pre-wrap;text-align:left;
+  }
+  .tstep.animate-in{animation:stepIn .35s ease both;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes stepIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+
+  .tracker-close{
+    margin-top:20px;background:var(--panel-2);color:var(--text);border:1px solid var(--border);
+    padding:10px 16px;border-radius:10px;font-size:13px;cursor:pointer;width:100%;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🏦</div>
+    <div>
+      <h1>Nexus Bank</h1>
+      <p>Canlı pul köçürməsi demo</p>
+    </div>
+    <a class="back-link" href="/">← Dashboard</a>
+  </header>
+
+  <div class="card">
+    <div class="balance-lbl">Hesab qalığı</div>
+    <div class="balance" id="balance-value">—</div>
+  </div>
+
+  <div class="card">
+    <h2>Pul Köçürməsi</h2>
+    <form id="transfer-form">
+      <label for="recipient">Alıcı</label>
+      <input id="recipient" required placeholder="Məs: Vüqar Məmmədov" value="Vüqar Məmmədov">
+      <label for="amount">Məbləğ (₼)</label>
+      <input id="amount" type="number" step="0.01" min="0.01" required placeholder="Məs: 150.00" value="150.00">
+      <button type="submit" class="btn" id="transfer-btn">Köçür</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Son Köçürmələr</h2>
+    <div id="history-list"><div class="history-empty">Yüklənir...</div></div>
+  </div>
+</div>
+
+<div class="tracker-overlay" id="tracker-overlay">
+  <div class="tracker-box">
+    <div class="tracker-amount" id="tracker-amount">—</div>
+    <div class="tracker-recipient" id="tracker-recipient">—</div>
+    <div id="tracker-steps"></div>
+    <button class="tracker-close" id="tracker-close-btn">Bağla</button>
+  </div>
+</div>
+
+<script>
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function fmtDate(s){
+  if(!s) return "—";
+  const d = new Date(s);
+  if(isNaN(d.getTime())) return s;
+  return d.toLocaleTimeString('az-AZ',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function stepIcon(state){
+  return state === 'ok' ? '✓' : state === 'fail' ? '✕' : '…';
+}
+
+const STARTING_BALANCE = 12480.00;
+
+function getBalance(){
+  try {
+    const stored = localStorage.getItem('nexusBankBalance');
+    return stored !== null ? parseFloat(stored) : STARTING_BALANCE;
+  } catch(e){ return STARTING_BALANCE; }
+}
+
+function setBalance(v){
+  try { localStorage.setItem('nexusBankBalance', v.toFixed(2)); } catch(e){ /* saxlama əlçatan deyil, sessiya daxilində davam edir */ }
+}
+
+function renderBalance(){
+  document.getElementById('balance-value').textContent = getBalance().toFixed(2) + ' ₼';
+}
+
+// Texniki AI diaqnozunu bank müştərisinin anlayacağı dilə çevirir.
+function bankFriendlyDiagnosis(raw){
+  if(!raw) return 'Naməlum texniki səbəbdən əməliyyat tamamlanmadı. Vəsaitiniz təhlükəsizdir, dəstək xidməti ilə əlaqə saxlayın.';
+  const r = raw.toLowerCase();
+  if (r.includes('circuit breaker')) {
+    return 'Bank sistemi son dəqiqələrdə çoxlu uğursuz əməliyyat qeydə aldığı üçün əməliyyatları müvəqqəti dayandırıb. Bir neçə saniyə sonra yenidən cəhd edin.';
+  }
+  if (r.includes('connection refused') || r.includes('əlçatan deyil')) {
+    return 'Bank sistemi hazırda əlçatan deyil — planlı texniki profilaktika aparılır. Bir az sonra yenidən cəhd edin.';
+  }
+  if (r.includes('timeout') || r.includes('vaxt ərzində')) {
+    return 'Bank sistemi sorğuya vaxtında cavab vermədi — yüksək yüklənmə səbəbindən gecikmə yarandı.';
+  }
+  if (r.includes('http 500') || r.includes('daxili xəta')) {
+    return 'Bank sistemində daxili texniki nasazlıq baş verdi. Əməliyyat geri qaytarıldı, vəsaitiniz təhlükəsizdir.';
+  }
+  if (r.includes('http 400') || r.includes('sorğunu qəbul etmədi')) {
+    return 'Köçürmə məlumatlarında uyğunsuzluq aşkarlandı — bank təhlükəsizlik yoxlaması əməliyyatı rədd etdi.';
+  }
+  if (r.includes('şəbəkə səviyyəsində')) {
+    return 'Əlavə təhlükəsizlik yoxlaması səbəbindən əməliyyat dayandırıldı. Lazım gələrsə bank tərəfindən sizinlə əlaqə saxlanılacaq.';
+  }
+  return 'Naməlum texniki səbəbdən əməliyyat tamamlanmadı. Vəsaitiniz təhlükəsizdir, dəstək xidməti ilə əlaqə saxlayın.';
+}
+
+function showInsufficientFunds(recipient, amount, balance){
+  document.getElementById('tracker-amount').textContent = `${amount.toFixed(2)} ₼`;
+  document.getElementById('tracker-recipient').textContent = `Alıcı: ${recipient}`;
+  document.getElementById('tracker-overlay').classList.add('open');
+  renderTrackerSteps([
+    {state:'ok', title:'Köçürmə sorğusu qəbul edildi', desc:'Nexus Bank sistemi sorğunu qeydə aldı'},
+    {
+      state:'fail',
+      title:'Balans yoxlanıldı',
+      desc:`Cari balans: ${balance.toFixed(2)} ₼`,
+      diag:'Balansda kifayət qədər vəsait yoxdur — köçürmə həyata keçirilmədi.'
+    }
+  ]);
+}
+
+function renderTrackerSteps(steps){
+  document.getElementById('tracker-steps').innerHTML = steps.map(s => `
+    <div class="tstep animate-in">
+      <div class="tstep-icon ${s.state}">${s.state === 'spin' ? '' : stepIcon(s.state)}</div>
+      <div class="tstep-body">
+        <b>${escapeHtml(s.title)}</b>
+        <span>${escapeHtml(s.desc)}</span>
+        ${s.diag ? `<div class="tstep-diag">${escapeHtml(s.diag)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function runTransferTracking(eventId, recipient, amount){
+  document.getElementById('tracker-amount').textContent = `${amount.toFixed(2)} ₼`;
+  document.getElementById('tracker-recipient').textContent = `Alıcı: ${recipient}`;
+  document.getElementById('tracker-overlay').classList.add('open');
+
+  const steps = [
+    {state:'wait', title:'Köçürmə sorğusu qəbul edildi', desc:'Nexus Bank sistemi sorğunu qeydə aldı'},
+    {state:'wait', title:'Bankın icra növbəsinə yazıldı', desc:'Təhlükəsizlik yoxlaması gözlənilir'},
+    {state:'wait', title:'Bank tərəfindən icra olunur', desc:'Gözlənilir...'}
+  ];
+  renderTrackerSteps(steps);
+  await sleep(350);
+
+  steps[0].state = 'ok';
+  renderTrackerSteps(steps);
+  await sleep(450);
+
+  steps[1].state = 'ok';
+  renderTrackerSteps(steps);
+  await sleep(450);
+
+  steps[2].state = 'spin';
+  steps[2].desc = 'Pul köçürülür...';
+  renderTrackerSteps(steps);
+
+  const deadline = Date.now() + 20000;
+  let finalEv = null;
+  while (Date.now() < deadline) {
+    await sleep(700);
+    try {
+      const res = await fetch('/api/v1/events');
+      const events = await res.json();
+      const ev = events.find(x => x.id === eventId);
+      if (ev && (ev.status === 'DELIVERED' || ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED')) {
+        finalEv = ev;
+        break;
+      }
+      if (ev && (ev.status === 'PROCESSING' || ev.status === 'RETRYING')) {
+        steps[2].desc = `${ev.retryCount ?? 0}-ci cəhd davam edir...`;
+        renderTrackerSteps(steps);
+      }
+    } catch (e) { /* şəbəkə xətası — növbəti dövrədə yenidən sınayır */ }
+  }
+
+  if (!finalEv) {
+    steps[2].state = 'wait';
+    steps[2].desc = 'Nəticə hələ məlum deyil — bir az sonra tarixçədə görünəcək.';
+    renderTrackerSteps(steps);
+    return;
+  }
+
+  if (finalEv.status === 'DELIVERED') {
+    steps[2].state = 'ok';
+    steps[2].desc = `${finalEv.retryCount ?? 0} cəhddən sonra bank tərəfindən təsdiqləndi`;
+    renderTrackerSteps(steps);
+    await sleep(300);
+    const newBalance = getBalance() - amount;
+    setBalance(newBalance);
+    renderBalance();
+    steps.push({
+      state:'ok',
+      title:'Köçürmə tamamlandı',
+      desc:`${amount.toFixed(2)} ₼ hesabınızdan çıxıldı · Yeni balans: ${newBalance.toFixed(2)} ₼`
+    });
+  } else {
+    steps[2].state = 'fail';
+    steps[2].desc = `${finalEv.retryCount ?? 0} cəhddən sonra bank tərəfindən rədd edildi`;
+    steps[2].diag = bankFriendlyDiagnosis(finalEv.aiDiagnostic);
+    renderTrackerSteps(steps);
+    await sleep(300);
+    steps.push({state:'fail', title:'Köçürmə uğursuz oldu', desc:`Burada, bu sorğuda problem yarandı — vəsaitiniz hesabınızda qalıb · ${fmtDate(finalEv.updatedAt)}`});
+  }
+  renderTrackerSteps(steps);
+  loadHistory();
+}
+
+document.getElementById('tracker-close-btn').addEventListener('click', () => {
+  document.getElementById('tracker-overlay').classList.remove('open');
+});
+document.getElementById('tracker-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'tracker-overlay') document.getElementById('tracker-overlay').classList.remove('open');
+});
+
+document.getElementById('transfer-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const recipient = document.getElementById('recipient').value.trim();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const btn = document.getElementById('transfer-btn');
+
+  const currentBalance = getBalance();
+  if (amount > currentBalance) {
+    showInsufficientFunds(recipient, amount, currentBalance);
+    return;
+  }
+
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/v1/webhooks/ingest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({event:'money.transfer', recipient, amount})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      runTransferTracking(Number(data.eventId), recipient, amount);
+    } else {
+      alert('Xəta: ' + (data.message || res.status));
+    }
+  } catch (err) {
+    alert('Şəbəkə xətası: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function loadHistory(){
+  const res = await fetch('/api/v1/events');
+  const events = await res.json();
+  const transfers = events.filter(ev => {
+    try { return JSON.parse(ev.payload).event === 'money.transfer'; }
+    catch(e){ return false; }
+  }).slice(0, 12);
+
+  const list = document.getElementById('history-list');
+  if (transfers.length === 0) {
+    list.innerHTML = '<div class="history-empty">Hələ köçürmə edilməyib.</div>';
+    return;
+  }
+
+  list.innerHTML = transfers.map(ev => {
+    let recipient = '—', amount = 0;
+    try { const p = JSON.parse(ev.payload); recipient = p.recipient || '—'; amount = p.amount || 0; } catch(e){}
+    const statusClass = ev.status === 'DELIVERED' ? 'ok' : (ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED') ? 'fail' : 'pending';
+    const statusLabel = ev.status === 'DELIVERED' ? 'Uğurlu' : (ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED') ? 'Uğursuz' : 'Gedir';
+    return `
+      <div class="history-item">
+        <div class="hi-left">
+          <div class="hi-recipient">${escapeHtml(recipient)}</div>
+          <div class="hi-time">${fmtDate(ev.updatedAt)}</div>
+        </div>
+        <div class="hi-amount">${Number(amount).toFixed(2)} ₼</div>
+        <div class="hi-status ${statusClass}">${statusLabel}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+renderBalance();
+loadHistory();
+setInterval(loadHistory, 4000);
+</script>
+</body>
+</html>

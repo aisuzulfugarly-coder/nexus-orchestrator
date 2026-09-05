@@ -134,6 +134,60 @@
 
   .toolbar{display:flex;gap:8px;align-items:center;}
   .toolbar .btn.secondary{padding:7px 12px;font-size:12px;}
+
+  .diag-panel{margin-top:20px;}
+  .diag-list{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto;}
+  .diag-card{
+    background:var(--bg-alt);border:1px solid rgba(199,108,255,.3);border-left:3px solid var(--purple);
+    border-radius:10px;padding:12px 14px;
+  }
+  .diag-card.s-FAILED{border-left-color:var(--red);border-color:rgba(255,92,122,.3);}
+  .diag-card-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;font-size:12px;color:var(--muted);}
+  .diag-card-head b{color:var(--text);font-size:13px;}
+  .diag-text{font-size:12.5px;line-height:1.55;color:var(--text);white-space:pre-wrap;}
+  .diag-empty{color:var(--muted);text-align:center;padding:30px 10px;font-size:13px;}
+
+  tbody tr[data-id]{cursor:pointer;}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(5,8,15,.65);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    max-width:560px;width:100%;max-height:82vh;overflow:auto;padding:22px;
+  }
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .modal-head h3{margin:0;font-size:16px;}
+  .modal-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;}
+  .modal-close:hover{color:var(--text);}
+
+  .mstep{display:flex;gap:12px;position:relative;padding-bottom:24px;}
+  .mstep:last-child{padding-bottom:0;}
+  .mstep::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--border);}
+  .mstep:last-child::before{display:none;}
+  .mstep-icon{
+    width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:14px;flex-shrink:0;z-index:1;font-weight:700;
+  }
+  .mstep-icon.ok{background:rgba(61,220,151,.15);color:var(--green);border:1px solid rgba(61,220,151,.4);}
+  .mstep-icon.fail{background:rgba(255,92,122,.15);color:var(--red);border:1px solid rgba(255,92,122,.4);}
+  .mstep-icon.wait{background:rgba(139,150,179,.15);color:var(--muted);border:1px solid rgba(139,150,179,.4);}
+  .mstep-icon.spin{
+    background:transparent;border:2px solid rgba(255,200,87,.3);border-top-color:var(--amber);
+    animation:spin .8s linear infinite;
+  }
+  .mstep.animate-in{animation:stepIn .35s ease both;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes stepIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .mstep-body{padding-top:3px;}
+  .mstep-body b{display:block;font-size:13.5px;color:var(--text);margin-bottom:2px;}
+  .mstep-body span{font-size:12px;color:var(--muted);}
+  .mstep-diag{
+    margin-top:8px;background:var(--bg-alt);border:1px solid rgba(255,92,122,.3);border-left:3px solid var(--red);
+    border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--text);white-space:pre-wrap;
+  }
 </style>
 </head>
 <body>
@@ -148,6 +202,10 @@
     </div>
     <div class="toolbar">
       <div class="live"><span class="dot" id="live-dot"></span><span id="live-text">canlı</span></div>
+      <a class="btn secondary" href="/bank.html" style="text-decoration:none;display:inline-flex;align-items:center;">🏦 Bank Demo</a>
+      <a class="btn secondary" href="/ticket.html" style="text-decoration:none;display:inline-flex;align-items:center;">🎫 Bilet Demo</a>
+      <a class="btn secondary" href="/claim.html" style="text-decoration:none;display:inline-flex;align-items:center;">🛡️ Sığorta Demo</a>
+      <button class="btn secondary" id="target-toggle-btn">🎯 Hədəf servis: yüklənir...</button>
       <button class="btn secondary" id="refresh-btn">↻ Yenilə</button>
       <button class="btn secondary" id="pause-btn">⏸ Dayandır</button>
     </div>
@@ -159,7 +217,7 @@
 
   <div class="grid">
     <div class="panel">
-      <h2>Hadisələr <span class="hint" id="events-count">0 hadisə</span></h2>
+      <h2>Hadisələr <span class="hint" id="events-count">0 hadisə · detallar üçün sətirə klikləyin</span></h2>
       <div class="table-scroll">
         <table>
           <thead>
@@ -194,12 +252,29 @@
           <div class="flow-arrow">↓</div>
           <div class="flow-step">📨 <b>Kafka: webhook-events</b> — event növbəyə atılır</div>
           <div class="flow-arrow">↓</div>
-          <div class="flow-step">⚙️ <b>WebhookConsumer</b> — hədəf servisə çatdırılır (Retry + Circuit Breaker)</div>
+          <div class="flow-step">⚙️ <b>WebhookConsumer</b> — hədəf servisə çatdırılır (Retry + Circuit Breaker), hədəf mock server təsadüfi uğur/xəta qaytarır</div>
           <div class="flow-arrow">↓</div>
           <div class="flow-step">✅ <b>DELIVERED</b> / ❌ <b>SENT_TO_DLQ</b> — son status DB-də saxlanılır (DLQ halında AI diaqnostikası əlavə olunur)</div>
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="panel diag-panel">
+    <h2>Son Diaqnostikalar <span class="hint" id="diag-count">0 uğursuzluq</span></h2>
+    <div class="diag-list" id="diag-list">
+      <div class="diag-empty">Yüklənir...</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="event-modal-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-title">Hadisə — gedişat</h3>
+      <button class="modal-close" id="modal-close-btn">✕</button>
+    </div>
+    <div id="modal-flow"></div>
   </div>
 </div>
 
@@ -216,6 +291,7 @@ const STATUS_BAR = {
 
 let paused = false;
 let timer = null;
+let lastEvents = [];
 
 function fmtDate(s){
   if(!s) return "—";
@@ -243,8 +319,9 @@ async function loadStats(){
 async function loadEvents(){
   const res = await fetch('/api/v1/events');
   const events = await res.json();
+  lastEvents = events;
   const body = document.getElementById('events-body');
-  document.getElementById('events-count').textContent = events.length + ' hadisə';
+  document.getElementById('events-count').textContent = events.length + ' hadisə · detallar üçün sətirə klikləyin';
 
   if(events.length === 0){
     body.innerHTML = '<tr><td colspan="7" class="empty">Hələ heç bir hadisə yoxdur — sağdakı formadan test webhook göndərin.</td></tr>';
@@ -252,7 +329,7 @@ async function loadEvents(){
   }
 
   body.innerHTML = events.map(ev => `
-    <tr>
+    <tr data-id="${ev.id}">
       <td>#${ev.id}</td>
       <td><span class="badge b-${ev.status}">${STATUS_LABEL[ev.status] ?? ev.status}</span></td>
       <td class="payload" title="${escapeHtml(ev.payload || '')}">${escapeHtml(ev.payload || '')}</td>
@@ -262,11 +339,222 @@ async function loadEvents(){
       <td class="payload" title="${escapeHtml(ev.aiDiagnostic || '')}">${escapeHtml(ev.aiDiagnostic || '—')}</td>
     </tr>
   `).join('');
+
+  renderDiagnostics(events);
 }
+
+function renderDiagnostics(events){
+  const list = document.getElementById('diag-list');
+  const failures = events
+    .filter(ev => (ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED') && ev.aiDiagnostic)
+    .slice(0, 20);
+
+  document.getElementById('diag-count').textContent = failures.length + ' uğursuzluq';
+
+  if(failures.length === 0){
+    list.innerHTML = '<div class="diag-empty">Hələ heç bir uğursuzluq yoxdur — bütün hadisələr uğurla çatdırılıb.</div>';
+    return;
+  }
+
+  list.innerHTML = failures.map(ev => `
+    <div class="diag-card s-${ev.status}">
+      <div class="diag-card-head">
+        <b>#${ev.id}</b>
+        <span class="badge b-${ev.status}">${STATUS_LABEL[ev.status] ?? ev.status}</span>
+        <span>${fmtDate(ev.updatedAt)}</span>
+        <span>${ev.retryCount ?? 0} cəhddən sonra</span>
+      </div>
+      <div class="diag-text">${escapeHtml(ev.aiDiagnostic)}</div>
+    </div>
+  `).join('');
+}
+
+function stepIcon(state){
+  return state === 'ok' ? '✓' : state === 'fail' ? '✕' : '…';
+}
+
+function buildEventSteps(ev){
+  const steps = [];
+
+  steps.push({
+    state: 'ok',
+    title: 'Webhook qəbul edildi',
+    desc: `POST /api/v1/webhooks/ingest · ${fmtDate(ev.createdAt)}`
+  });
+
+  steps.push({
+    state: 'ok',
+    title: 'Kafka növbəsinə yazıldı',
+    desc: 'Topic: webhook-events → WebhookConsumer'
+  });
+
+  let deliverState = 'wait';
+  let deliverDesc = 'Hələ cəhd edilməyib, növbədə gözləyir';
+  if (ev.status === 'PROCESSING' || ev.status === 'RETRYING') {
+    deliverDesc = `${ev.retryCount ?? 0}-ci cəhd davam edir — ${ev.targetUrl || 'hədəf servis'}`;
+  } else if (ev.status === 'DELIVERED') {
+    deliverState = 'ok';
+    deliverDesc = `${ev.retryCount ?? 0} cəhddən sonra uğurla çatdırıldı — ${ev.targetUrl || 'hədəf servis'}`;
+  } else if (ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED') {
+    deliverState = 'fail';
+    deliverDesc = `${ev.retryCount ?? 0} cəhddən sonra uğursuz oldu — ${ev.targetUrl || 'hədəf servis'}`;
+  }
+  steps.push({
+    state: deliverState,
+    title: 'Hədəf servisə göndərildi (Retry + Circuit Breaker)',
+    desc: deliverDesc,
+    diag: deliverState === 'fail' ? ev.aiDiagnostic : null
+  });
+
+  if (ev.status === 'DELIVERED') {
+    steps.push({state:'ok', title:'DELIVERED', desc:`Son status · ${fmtDate(ev.updatedAt)}`});
+  } else if (ev.status === 'SENT_TO_DLQ') {
+    steps.push({state:'fail', title:'SENT_TO_DLQ', desc:`Burada, bu sorğuda problem yarandı · ${fmtDate(ev.updatedAt)}`});
+  } else if (ev.status === 'FAILED') {
+    steps.push({state:'fail', title:'FAILED', desc:`Son status · ${fmtDate(ev.updatedAt)}`});
+  } else {
+    steps.push({state:'wait', title: STATUS_LABEL[ev.status] ?? ev.status, desc:'Nəticə gözlənilir...'});
+  }
+
+  return steps;
+}
+
+function sleep(ms){
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function renderSteps(steps){
+  document.getElementById('modal-flow').innerHTML = steps.map(s => `
+    <div class="mstep animate-in">
+      <div class="mstep-icon ${s.state}">${s.state === 'spin' ? '' : stepIcon(s.state)}</div>
+      <div class="mstep-body">
+        <b>${escapeHtml(s.title)}</b>
+        <span>${escapeHtml(s.desc)}</span>
+        ${s.diag ? `<div class="mstep-diag">${escapeHtml(s.diag)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function runLiveTracking(eventId){
+  document.getElementById('modal-title').textContent = `Hadisə #${eventId} — canlı gedişat`;
+  document.getElementById('event-modal-overlay').classList.add('open');
+
+  const steps = [
+    {state:'wait', title:'Webhook qəbul edildi', desc:'POST /api/v1/webhooks/ingest'},
+    {state:'wait', title:'Kafka növbəsinə yazıldı', desc:'Topic: webhook-events'},
+    {state:'wait', title:'Hədəf servisə göndərilir (Retry + Circuit Breaker)', desc:'Gözlənilir...'}
+  ];
+  renderSteps(steps);
+  await sleep(350);
+
+  steps[0].state = 'ok';
+  steps[0].desc = `POST /api/v1/webhooks/ingest · ${fmtDate(new Date().toISOString())}`;
+  renderSteps(steps);
+  await sleep(450);
+
+  steps[1].state = 'ok';
+  steps[1].desc = 'Topic: webhook-events → WebhookConsumer';
+  renderSteps(steps);
+  await sleep(450);
+
+  steps[2].state = 'spin';
+  steps[2].desc = 'Hədəf servisə göndərilir...';
+  renderSteps(steps);
+
+  const deadline = Date.now() + 20000;
+  let finalEv = null;
+  while (Date.now() < deadline) {
+    await sleep(700);
+    try {
+      const res = await fetch('/api/v1/events');
+      const events = await res.json();
+      const ev = events.find(x => x.id === eventId);
+      if (ev && (ev.status === 'DELIVERED' || ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED')) {
+        finalEv = ev;
+        break;
+      }
+      if (ev && (ev.status === 'PROCESSING' || ev.status === 'RETRYING')) {
+        steps[2].desc = `${ev.retryCount ?? 0}-ci cəhd davam edir...`;
+        renderSteps(steps);
+      }
+    } catch (e) { /* şəbəkə xətası — növbəti dövrədə yenidən sınayır */ }
+  }
+
+  if (!finalEv) {
+    steps[2].state = 'wait';
+    steps[2].desc = 'Nəticə hələ məlum deyil — cədvəldən yoxlaya bilərsiniz.';
+    renderSteps(steps);
+    return;
+  }
+
+  if (finalEv.status === 'DELIVERED') {
+    steps[2].state = 'ok';
+    steps[2].desc = `${finalEv.retryCount ?? 0} cəhddən sonra uğurla çatdırıldı — ${finalEv.targetUrl || 'hədəf servis'}`;
+    renderSteps(steps);
+    await sleep(300);
+    steps.push({state:'ok', title:'DELIVERED', desc:`Son status · ${fmtDate(finalEv.updatedAt)}`});
+  } else {
+    steps[2].state = 'fail';
+    steps[2].desc = `${finalEv.retryCount ?? 0} cəhddən sonra uğursuz oldu — ${finalEv.targetUrl || 'hədəf servis'}`;
+    steps[2].diag = finalEv.aiDiagnostic;
+    renderSteps(steps);
+    await sleep(300);
+    steps.push({state:'fail', title: finalEv.status, desc:`Burada, bu sorğuda problem yarandı · ${fmtDate(finalEv.updatedAt)}`});
+  }
+  renderSteps(steps);
+  refreshAll();
+}
+
+function openEventModal(ev){
+  document.getElementById('modal-title').textContent = `Hadisə #${ev.id} — gedişat`;
+  renderSteps(buildEventSteps(ev));
+  document.getElementById('event-modal-overlay').classList.add('open');
+}
+
+function closeEventModal(){
+  document.getElementById('event-modal-overlay').classList.remove('open');
+}
+
+document.getElementById('events-body').addEventListener('click', (e) => {
+  const row = e.target.closest('tr[data-id]');
+  if(!row) return;
+  const id = Number(row.dataset.id);
+  const ev = lastEvents.find(x => x.id === id);
+  if(ev) openEventModal(ev);
+});
+
+document.getElementById('modal-close-btn').addEventListener('click', closeEventModal);
+document.getElementById('event-modal-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'event-modal-overlay') closeEventModal();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape') closeEventModal();
+});
+
+async function loadTargetStatus(){
+  const res = await fetch('/api/v1/mock-target/status');
+  const data = await res.json();
+  updateTargetBtn(data.down);
+}
+
+function updateTargetBtn(down){
+  const btn = document.getElementById('target-toggle-btn');
+  btn.textContent = down ? '🔴 Hədəf servis söndürülüb — işə sal' : '🟢 Hədəf servis aktiv — söndür';
+  btn.title = down
+    ? 'Hədəf server tamamilə bağlıdır — bütün sorğular connection refused ilə uğursuz olacaq.'
+    : 'Hədəf server işləyir, hər sorğuya təsadüfi uğur/xəta qaytarır.';
+}
+
+document.getElementById('target-toggle-btn').addEventListener('click', async () => {
+  const res = await fetch('/api/v1/mock-target/toggle', {method:'POST'});
+  const data = await res.json();
+  updateTargetBtn(data.down);
+});
 
 async function refreshAll(){
   try{
-    await Promise.all([loadStats(), loadEvents()]);
+    await Promise.all([loadStats(), loadEvents(), loadTargetStatus()]);
     setLive(true);
   }catch(e){
     setLive(false);
@@ -306,7 +594,7 @@ document.getElementById('send-form').addEventListener('submit', async (e) => {
     if(res.ok){
       msg.className = 'msg ok';
       msg.textContent = `Göndərildi (event #${data.eventId})`;
-      refreshAll();
+      runLiveTracking(Number(data.eventId));
     } else {
       msg.className = 'msg err';
       msg.textContent = 'Xəta: ' + (data.message || res.status);

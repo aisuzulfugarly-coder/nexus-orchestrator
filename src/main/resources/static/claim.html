@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusSığorta</title>
+<style>
+  :root{
+    --bg:#0b0f19; --panel:#151d30; --panel-2:#1b2438; --border:#26314a;
+    --text:#e7ecf7; --muted:#8b96b3; --accent:#3ddc97; --accent-2:#6c8bff;
+    --green:#3ddc97; --amber:#ffc857; --red:#ff5c7a; --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(61,220,151,.13), transparent),
+      radial-gradient(1000px 500px at 110% 10%, rgba(108,139,255,.10), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:32px 20px 60px;}
+
+  header{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
+  .logo{
+    width:46px;height:46px;border-radius:13px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+    box-shadow:0 8px 24px rgba(61,220,151,.30);
+  }
+  header h1{margin:0;font-size:19px;}
+  header p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
+  .back-link{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:6px 10px;border-radius:8px;}
+  .back-link:hover{color:var(--text);border-color:var(--accent);}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;}
+  .card h2{margin:0 0 16px;font-size:15px;}
+  .card .sub{color:var(--muted);font-size:12px;margin:-10px 0 16px;}
+
+  form{display:flex;flex-direction:column;gap:12px;margin-top:6px;}
+  label{font-size:12px;color:var(--muted);margin-bottom:-6px;}
+  input,select{
+    width:100%;background:#0f1526;color:var(--text);border:1px solid var(--border);
+    border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--accent);}
+
+  .doc-list{display:flex;flex-direction:column;gap:8px;margin-top:2px;}
+  .doc-item{
+    display:flex;align-items:center;gap:10px;background:#0f1526;border:1px solid var(--border);
+    border-radius:10px;padding:11px 13px;font-size:13px;cursor:pointer;user-select:none;
+  }
+  .doc-item.checked{border-color:rgba(61,220,151,.5);background:rgba(61,220,151,.06);}
+  .doc-check{
+    width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--green);
+  }
+  .doc-item.checked .doc-check{border-color:var(--green);background:rgba(61,220,151,.15);}
+
+  .btn{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#06251a;border:none;
+    padding:13px 16px;border-radius:10px;font-weight:700;font-size:14.5px;cursor:pointer;
+    margin-top:4px;transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(61,220,151,.3);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+  .btn-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:-2px;}
+
+  .history-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .history-item:last-child{border-bottom:none;}
+  .hi-left{flex:1;}
+  .hi-title{font-weight:600;}
+  .hi-time{color:var(--muted);font-size:11.5px;margin-top:2px;}
+  .hi-amount{font-weight:700;white-space:nowrap;}
+  .hi-status{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:3px 8px;border-radius:999px;margin-left:8px;}
+  .hi-status.ok{color:var(--green);background:rgba(61,220,151,.12);}
+  .hi-status.fail{color:var(--red);background:rgba(255,92,122,.12);}
+  .hi-status.pending{color:var(--muted);background:rgba(139,150,179,.12);}
+  .history-empty{color:var(--muted);text-align:center;padding:20px 0;font-size:13px;}
+
+  .tracker-overlay{position:fixed;inset:0;background:rgba(5,8,15,.75);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .tracker-overlay.open{display:flex;}
+  .tracker-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);max-width:440px;width:100%;max-height:86vh;overflow:auto;padding:26px 24px;text-align:center;}
+  .tracker-amount{font-size:24px;font-weight:700;margin-bottom:2px;}
+  .tracker-recipient{color:var(--muted);font-size:13px;margin-bottom:22px;}
+
+  .tstep{display:flex;gap:12px;text-align:left;position:relative;padding-bottom:20px;}
+  .tstep:last-child{padding-bottom:0;}
+  .tstep::before{content:"";position:absolute;left:12px;top:26px;bottom:0;width:2px;background:var(--border);}
+  .tstep:last-child::before{display:none;}
+  .tstep-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;z-index:1;}
+  .tstep-icon.ok{background:rgba(61,220,151,.15);color:var(--green);border:1px solid rgba(61,220,151,.4);}
+  .tstep-icon.fail{background:rgba(255,92,122,.15);color:var(--red);border:1px solid rgba(255,92,122,.4);}
+  .tstep-icon.wait{background:rgba(139,150,179,.15);color:var(--muted);border:1px solid rgba(139,150,179,.4);}
+  .tstep-icon.spin{background:transparent;border:2px solid rgba(255,200,87,.3);border-top-color:var(--amber);animation:spin .8s linear infinite;}
+  .tstep-body b{display:block;font-size:12.5px;margin-bottom:2px;}
+  .tstep-body span{font-size:11px;color:var(--muted);}
+  .tstep-diag{margin-top:8px;background:#0f1526;border:1px solid rgba(255,92,122,.3);border-left:3px solid var(--red);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--text);white-space:pre-wrap;text-align:left;}
+  .tstep.animate-in{animation:stepIn .3s ease both;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes stepIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+
+  .tracker-close{margin-top:20px;background:var(--panel-2);color:var(--text);border:1px solid var(--border);padding:10px 16px;border-radius:10px;font-size:13px;cursor:pointer;width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🛡️</div>
+    <div>
+      <h1>NexusSığorta</h1>
+      <p>Canlı iddia (claim) proses demo</p>
+    </div>
+    <a class="back-link" href="/">← Dashboard</a>
+  </header>
+
+  <div class="card">
+    <h2>Yeni İddia</h2>
+    <div class="sub">Bütün sənədləri təqdim etmədən iddia göndərilə bilməz</div>
+    <form id="claim-form">
+      <label for="claim-type">İddia növü</label>
+      <select id="claim-type">
+        <option value="Avtomobil qəzası">Avtomobil qəzası</option>
+        <option value="Səhiyyə xərcləri">Səhiyyə xərcləri</option>
+        <option value="Əmlak zədəsi">Əmlak zədəsi</option>
+      </select>
+      <label for="amount">Tələb olunan məbləğ (₼)</label>
+      <input id="amount" type="number" step="0.01" min="1" required value="1200.00">
+
+      <label style="margin-top:6px;">Tələb olunan sənədlər</label>
+      <div class="doc-list" id="doc-list">
+        <div class="doc-item" data-doc="Şəxsiyyət vəsiqəsi"><span class="doc-check"></span> Şəxsiyyət vəsiqəsi</div>
+        <div class="doc-item" data-doc="Hadisənin sübutu (protokol/şəkil)"><span class="doc-check"></span> Hadisənin sübutu (protokol/şəkil)</div>
+        <div class="doc-item" data-doc="Bank hesab nömrəsi"><span class="doc-check"></span> Bank hesab nömrəsi</div>
+      </div>
+
+      <button type="submit" class="btn" id="claim-btn" disabled>İddianı Göndər</button>
+      <div class="btn-hint" id="btn-hint">Göndərmək üçün bütün sənədləri işarələyin</div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Son İddialar</h2>
+    <div id="history-list"><div class="history-empty">Yüklənir...</div></div>
+  </div>
+</div>
+
+<div class="tracker-overlay" id="tracker-overlay">
+  <div class="tracker-box">
+    <div class="tracker-amount" id="tracker-amount">—</div>
+    <div class="tracker-recipient" id="tracker-recipient">—</div>
+    <div id="tracker-steps"></div>
+    <button class="tracker-close" id="tracker-close-btn">Bağla</button>
+  </div>
+</div>
+
+<script>
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtDate(s){
+  if(!s) return "—";
+  const d = new Date(s);
+  if(isNaN(d.getTime())) return s;
+  return d.toLocaleTimeString('az-AZ',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function stepIcon(state){ return state === 'ok' ? '✓' : state === 'fail' ? '✕' : '…'; }
+
+function renderTrackerSteps(steps){
+  document.getElementById('tracker-steps').innerHTML = steps.map(s => `
+    <div class="tstep animate-in">
+      <div class="tstep-icon ${s.state}">${s.state === 'spin' ? '' : stepIcon(s.state)}</div>
+      <div class="tstep-body">
+        <b>${escapeHtml(s.title)}</b>
+        <span>${escapeHtml(s.desc)}</span>
+        ${s.diag ? `<div class="tstep-diag">${escapeHtml(s.diag)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// Sənəd seçimi — bütün sənədlər işarələnməyincə "Göndər" düyməsi aktiv olmur.
+const selectedDocs = new Set();
+document.querySelectorAll('.doc-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const doc = item.dataset.doc;
+    if (selectedDocs.has(doc)) { selectedDocs.delete(doc); item.classList.remove('checked'); item.querySelector('.doc-check').textContent = ''; }
+    else { selectedDocs.add(doc); item.classList.add('checked'); item.querySelector('.doc-check').textContent = '✓'; }
+    const totalDocs = document.querySelectorAll('.doc-item').length;
+    const btn = document.getElementById('claim-btn');
+    const hint = document.getElementById('btn-hint');
+    if (selectedDocs.size === totalDocs) {
+      btn.disabled = false;
+      hint.textContent = 'Bütün sənədlər hazırdır — iddianı göndərə bilərsiniz';
+    } else {
+      btn.disabled = true;
+      hint.textContent = `Göndərmək üçün bütün sənədləri işarələyin (${selectedDocs.size}/${totalDocs})`;
+    }
+  });
+});
+
+// Texniki AI diaqnozunu sığorta müştərisinin anlayacağı dilə çevirir.
+function claimFriendlyDiagnosis(raw){
+  if(!raw) return 'Naməlum texniki səbəbdən iddia emal olunmadı, mütəxəssis tərəfindən yenidən baxılacaq.';
+  const r = raw.toLowerCase();
+  if (r.includes('circuit breaker')) {
+    return 'Qiymətləndirmə sistemi hazırda çox sayda iddia aldığı üçün müvəqqəti dayandırılıb. Bir neçə saniyə sonra yenidən cəhd edin.';
+  }
+  if (r.includes('connection refused') || r.includes('əlçatan deyil')) {
+    return 'Qiymətləndirmə sistemi hazırda əlçatan deyil — planlı texniki profilaktika aparılır.';
+  }
+  if (r.includes('timeout') || r.includes('vaxt ərzində')) {
+    return 'Sistem sorğuya vaxtında cavab vermədi — yüksək yüklənmə səbəbindən gecikmə yarandı.';
+  }
+  if (r.includes('http 500') || r.includes('daxili xəta')) {
+    return 'Qiymətləndirmə sistemində daxili texniki nasazlıq baş verdi. İddianız saxlanıldı, mütəxəssis sizinlə əlaqə saxlayacaq.';
+  }
+  if (r.includes('http 400') || r.includes('sorğunu qəbul etmədi')) {
+    return 'Təqdim olunan sənədlərdə uyğunsuzluq aşkarlandı — əlavə sənəd tələb oluna bilər.';
+  }
+  if (r.includes('şəbəkə səviyyəsində')) {
+    return 'Əlavə fırıldaqçılıq yoxlaması səbəbindən iddia dayandırıldı — mütəxəssis 24 saat ərzində sizinlə əlaqə saxlayacaq.';
+  }
+  return 'Naməlum texniki səbəbdən iddia emal olunmadı, mütəxəssis tərəfindən yenidən baxılacaq.';
+}
+
+async function runClaimTracking(eventId, claimType, amount, docs){
+  document.getElementById('tracker-amount').textContent = `${amount.toFixed(2)} ₼`;
+  document.getElementById('tracker-recipient').textContent = `${claimType}`;
+  document.getElementById('tracker-overlay').classList.add('open');
+
+  const steps = [
+    {state:'wait', title:'İddia qeydə alındı', desc:'NexusSığorta sistemi sorğunu qeydə aldı'},
+    {state:'wait', title:'Sənədlər yükləndi', desc: docs.join(', ')},
+    {state:'wait', title:'Sənədlər ilkin yoxlamadan keçdi', desc:'Format və tamlıq avtomatik yoxlanıldı'},
+    {state:'wait', title:'Qiymətləndirmə mütəxəssisinə ötürüldü', desc:'İddia təhlil üçün növbəyə qoyuldu'},
+    {state:'wait', title:'Qiymətləndirmə sistemində icra olunur', desc:'Gözlənilir...'}
+  ];
+  renderTrackerSteps(steps);
+  await sleep(350);
+
+  steps[0].state = 'ok';
+  renderTrackerSteps(steps);
+  await sleep(450);
+
+  steps[1].state = 'ok';
+  renderTrackerSteps(steps);
+  await sleep(500);
+
+  steps[2].state = 'ok';
+  renderTrackerSteps(steps);
+  await sleep(450);
+
+  steps[3].state = 'ok';
+  renderTrackerSteps(steps);
+  await sleep(450);
+
+  steps[4].state = 'spin';
+  steps[4].desc = 'Risk qiymətləndirməsi aparılır...';
+  renderTrackerSteps(steps);
+
+  const deadline = Date.now() + 20000;
+  let finalEv = null;
+  while (Date.now() < deadline) {
+    await sleep(700);
+    try {
+      const res = await fetch('/api/v1/events');
+      const events = await res.json();
+      const ev = events.find(x => x.id === eventId);
+      if (ev && (ev.status === 'DELIVERED' || ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED')) {
+        finalEv = ev;
+        break;
+      }
+      if (ev && (ev.status === 'PROCESSING' || ev.status === 'RETRYING')) {
+        steps[4].desc = `${ev.retryCount ?? 0}-ci cəhd davam edir...`;
+        renderTrackerSteps(steps);
+      }
+    } catch (e) { /* şəbəkə xətası — növbəti dövrədə yenidən sınayır */ }
+  }
+
+  if (!finalEv) {
+    steps[4].state = 'wait';
+    steps[4].desc = 'Nəticə hələ məlum deyil — bir az sonra tarixçədə görünəcək.';
+    renderTrackerSteps(steps);
+    return;
+  }
+
+  if (finalEv.status === 'DELIVERED') {
+    steps[4].state = 'ok';
+    steps[4].desc = `${finalEv.retryCount ?? 0} cəhddən sonra qiymətləndirmə tamamlandı`;
+    renderTrackerSteps(steps);
+    await sleep(300);
+    steps.push({state:'ok', title:'İddia təsdiqləndi', desc:`${amount.toFixed(2)} ₼ ödəniş 3-5 iş günü ərzində hesabınıza köçürüləcək · ${fmtDate(finalEv.updatedAt)}`});
+  } else {
+    steps[4].state = 'fail';
+    steps[4].desc = `${finalEv.retryCount ?? 0} cəhddən sonra avtomatik qiymətləndirmə tamamlanmadı`;
+    steps[4].diag = claimFriendlyDiagnosis(finalEv.aiDiagnostic);
+    renderTrackerSteps(steps);
+    await sleep(300);
+    steps.push({state:'fail', title:'Əlavə baxış tələb olunur', desc:`Burada, bu sorğuda problem yarandı · ${fmtDate(finalEv.updatedAt)}`});
+  }
+  renderTrackerSteps(steps);
+  loadHistory();
+}
+
+document.getElementById('tracker-close-btn').addEventListener('click', () => {
+  document.getElementById('tracker-overlay').classList.remove('open');
+});
+document.getElementById('tracker-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'tracker-overlay') document.getElementById('tracker-overlay').classList.remove('open');
+});
+
+document.getElementById('claim-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const claimType = document.getElementById('claim-type').value;
+  const amount = parseFloat(document.getElementById('amount').value);
+  const docs = Array.from(selectedDocs);
+  const btn = document.getElementById('claim-btn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/v1/webhooks/ingest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({event:'insurance.claim', claimType, amount, docs})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      runClaimTracking(Number(data.eventId), claimType, amount, docs);
+    } else {
+      alert('Xəta: ' + (data.message || res.status));
+    }
+  } catch (err) {
+    alert('Şəbəkə xətası: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function loadHistory(){
+  const res = await fetch('/api/v1/events');
+  const events = await res.json();
+  const claims = events.filter(ev => {
+    try { return JSON.parse(ev.payload).event === 'insurance.claim'; }
+    catch(e){ return false; }
+  }).slice(0, 12);
+
+  const list = document.getElementById('history-list');
+  if (claims.length === 0) {
+    list.innerHTML = '<div class="history-empty">Hələ iddia göndərilməyib.</div>';
+    return;
+  }
+
+  list.innerHTML = claims.map(ev => {
+    let claimType = '—', amount = 0;
+    try { const p = JSON.parse(ev.payload); claimType = p.claimType || '—'; amount = p.amount || 0; } catch(e){}
+    const statusClass = ev.status === 'DELIVERED' ? 'ok' : (ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED') ? 'fail' : 'pending';
+    const statusLabel = ev.status === 'DELIVERED' ? 'Təsdiqləndi' : (ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED') ? 'Əlavə baxış' : 'Gedir';
+    return `
+      <div class="history-item">
+        <div class="hi-left">
+          <div class="hi-title">${escapeHtml(claimType)}</div>
+          <div class="hi-time">${fmtDate(ev.updatedAt)}</div>
+        </div>
+        <div class="hi-amount">${Number(amount).toFixed(2)} ₼</div>
+        <div class="hi-status ${statusClass}">${statusLabel}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+loadHistory();
+setInterval(loadHistory, 4000);
+</script>
+</body>
+</html>

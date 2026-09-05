@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusTicket</title>
+<style>
+  :root{
+    --bg:#0b0f19; --panel:#151d30; --panel-2:#1b2438; --border:#26314a;
+    --text:#e7ecf7; --muted:#8b96b3; --accent:#ff9f5a; --accent-2:#ffc857;
+    --green:#3ddc97; --amber:#ffc857; --red:#ff5c7a; --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(255,159,90,.15), transparent),
+      radial-gradient(1000px 500px at 110% 10%, rgba(255,200,87,.10), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:32px 20px 60px;}
+
+  header{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
+  .logo{
+    width:46px;height:46px;border-radius:13px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+    box-shadow:0 8px 24px rgba(255,159,90,.35);
+  }
+  header h1{margin:0;font-size:19px;}
+  header p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
+  .back-link{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:6px 10px;border-radius:8px;}
+  .back-link:hover{color:var(--text);border-color:var(--accent);}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:20px;}
+  .card h2{margin:0 0 16px;font-size:15px;}
+
+  .total{font-size:26px;font-weight:700;letter-spacing:-.5px;margin:4px 0 2px;}
+  .total-lbl{color:var(--muted);font-size:12px;}
+
+  form{display:flex;flex-direction:column;gap:12px;margin-top:6px;}
+  label{font-size:12px;color:var(--muted);margin-bottom:-6px;}
+  input,select{
+    width:100%;background:#0f1526;color:var(--text);border:1px solid var(--border);
+    border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--accent);}
+  .btn{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#1a1204;border:none;
+    padding:13px 16px;border-radius:10px;font-weight:700;font-size:14.5px;cursor:pointer;
+    margin-top:4px;transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(255,159,90,.35);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+
+  .history-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .history-item:last-child{border-bottom:none;}
+  .hi-left{flex:1;}
+  .hi-title{font-weight:600;}
+  .hi-time{color:var(--muted);font-size:11.5px;margin-top:2px;}
+  .hi-amount{font-weight:700;white-space:nowrap;}
+  .hi-status{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;padding:3px 8px;border-radius:999px;margin-left:8px;}
+  .hi-status.ok{color:var(--green);background:rgba(61,220,151,.12);}
+  .hi-status.fail{color:var(--red);background:rgba(255,92,122,.12);}
+  .hi-status.pending{color:var(--muted);background:rgba(139,150,179,.12);}
+  .history-empty{color:var(--muted);text-align:center;padding:20px 0;font-size:13px;}
+
+  .tracker-overlay{position:fixed;inset:0;background:rgba(5,8,15,.75);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .tracker-overlay.open{display:flex;}
+  .tracker-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);max-width:420px;width:100%;padding:26px 24px;text-align:center;}
+  .tracker-amount{font-size:24px;font-weight:700;margin-bottom:2px;}
+  .tracker-recipient{color:var(--muted);font-size:13px;margin-bottom:22px;}
+
+  .tstep{display:flex;gap:12px;text-align:left;position:relative;padding-bottom:22px;}
+  .tstep:last-child{padding-bottom:0;}
+  .tstep::before{content:"";position:absolute;left:13px;top:28px;bottom:0;width:2px;background:var(--border);}
+  .tstep:last-child::before{display:none;}
+  .tstep-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;z-index:1;}
+  .tstep-icon.ok{background:rgba(61,220,151,.15);color:var(--green);border:1px solid rgba(61,220,151,.4);}
+  .tstep-icon.fail{background:rgba(255,92,122,.15);color:var(--red);border:1px solid rgba(255,92,122,.4);}
+  .tstep-icon.wait{background:rgba(139,150,179,.15);color:var(--muted);border:1px solid rgba(139,150,179,.4);}
+  .tstep-icon.spin{background:transparent;border:2px solid rgba(255,200,87,.3);border-top-color:var(--amber);animation:spin .8s linear infinite;}
+  .tstep-body b{display:block;font-size:13px;margin-bottom:2px;}
+  .tstep-body span{font-size:11.5px;color:var(--muted);}
+  .tstep-diag{margin-top:8px;background:#0f1526;border:1px solid rgba(255,92,122,.3);border-left:3px solid var(--red);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--text);white-space:pre-wrap;text-align:left;}
+  .tstep.animate-in{animation:stepIn .35s ease both;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes stepIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+
+  .tracker-close{margin-top:20px;background:var(--panel-2);color:var(--text);border:1px solid var(--border);padding:10px 16px;border-radius:10px;font-size:13px;cursor:pointer;width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🎫</div>
+    <div>
+      <h1>NexusTicket</h1>
+      <p>Canlı bilet rezervasiyası demo</p>
+    </div>
+    <a class="back-link" href="/">← Dashboard</a>
+  </header>
+
+  <div class="card">
+    <h2>Bilet Al</h2>
+    <form id="ticket-form">
+      <label for="event-name">Tədbir</label>
+      <input id="event-name" required placeholder="Məs: Röya Konserti" value="Röya Konserti">
+      <label for="qty">Bilet sayı</label>
+      <input id="qty" type="number" min="1" max="10" step="1" required value="2">
+      <div class="total-lbl">Ümumi məbləğ</div>
+      <div class="total" id="total-value">90.00 ₼</div>
+      <button type="submit" class="btn" id="ticket-btn">Bron et</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Son Bronlar</h2>
+    <div id="history-list"><div class="history-empty">Yüklənir...</div></div>
+  </div>
+</div>
+
+<div class="tracker-overlay" id="tracker-overlay">
+  <div class="tracker-box">
+    <div class="tracker-amount" id="tracker-amount">—</div>
+    <div class="tracker-recipient" id="tracker-recipient">—</div>
+    <div id="tracker-steps"></div>
+    <button class="tracker-close" id="tracker-close-btn">Bağla</button>
+  </div>
+</div>
+
+<script>
+const PRICE_PER_TICKET = 45.00;
+
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtDate(s){
+  if(!s) return "—";
+  const d = new Date(s);
+  if(isNaN(d.getTime())) return s;
+  return d.toLocaleTimeString('az-AZ',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function stepIcon(state){ return state === 'ok' ? '✓' : state === 'fail' ? '✕' : '…'; }
+
+function renderTrackerSteps(steps){
+  document.getElementById('tracker-steps').innerHTML = steps.map(s => `
+    <div class="tstep animate-in">
+      <div class="tstep-icon ${s.state}">${s.state === 'spin' ? '' : stepIcon(s.state)}</div>
+      <div class="tstep-body">
+        <b>${escapeHtml(s.title)}</b>
+        <span>${escapeHtml(s.desc)}</span>
+        ${s.diag ? `<div class="tstep-diag">${escapeHtml(s.diag)}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// Texniki AI diaqnozunu bilet müştərisinin anlayacağı dilə çevirir.
+function ticketFriendlyDiagnosis(raw){
+  if(!raw) return 'Naməlum texniki səbəbdən bron tamamlanmadı. Ödənişiniz alınmayıb.';
+  const r = raw.toLowerCase();
+  if (r.includes('circuit breaker')) {
+    return 'Bilet sistemi hazırda çox sayda sorğu aldığı üçün müvəqqəti dayandırılıb. Bir neçə saniyə sonra yenidən cəhd edin.';
+  }
+  if (r.includes('connection refused') || r.includes('əlçatan deyil')) {
+    return 'Bilet satış sistemi hazırda əlçatan deyil — planlı texniki profilaktika aparılır.';
+  }
+  if (r.includes('timeout') || r.includes('vaxt ərzində')) {
+    return 'Sistem sorğuya vaxtında cavab vermədi — yüksək tələbat səbəbindən gecikmə yarandı.';
+  }
+  if (r.includes('http 500') || r.includes('daxili xəta')) {
+    return 'Bilet sistemində daxili texniki nasazlıq baş verdi. Ödənişiniz geri qaytarılacaq.';
+  }
+  if (r.includes('http 400') || r.includes('sorğunu qəbul etmədi')) {
+    return 'Seçdiyiniz yerlər artıq başqa istifadəçi tərəfindən tutulub — bron tamamlanmadı.';
+  }
+  if (r.includes('şəbəkə səviyyəsində')) {
+    return 'Ödəniş provayderi ilə əlaqə kəsildi — əməliyyat tamamlanmadı, kartınızdan vəsait tutulmayıb.';
+  }
+  return 'Naməlum texniki səbəbdən bron tamamlanmadı. Ödənişiniz alınmayıb.';
+}
+
+async function runTicketTracking(eventId, eventName, amount){
+  document.getElementById('tracker-amount').textContent = `${amount.toFixed(2)} ₼`;
+  document.getElementById('tracker-recipient').textContent = `Tədbir: ${eventName}`;
+  document.getElementById('tracker-overlay').classList.add('open');
+
+  const steps = [
+    {state:'wait', title:'Sifariş qəbul edildi', desc:'NexusTicket sistemi sorğunu qeydə aldı'},
+    {state:'wait', title:'Ödəniş yoxlanılır', desc:'Kart məlumatları təsdiqlənir'},
+    {state:'wait', title:'Yerlər bron edilir', desc:'Gözlənilir...'}
+  ];
+  renderTrackerSteps(steps);
+  await sleep(350);
+
+  steps[0].state = 'ok';
+  renderTrackerSteps(steps);
+  await sleep(450);
+
+  steps[1].state = 'ok';
+  renderTrackerSteps(steps);
+  await sleep(450);
+
+  steps[2].state = 'spin';
+  steps[2].desc = 'Yerlər bron edilir...';
+  renderTrackerSteps(steps);
+
+  const deadline = Date.now() + 20000;
+  let finalEv = null;
+  while (Date.now() < deadline) {
+    await sleep(700);
+    try {
+      const res = await fetch('/api/v1/events');
+      const events = await res.json();
+      const ev = events.find(x => x.id === eventId);
+      if (ev && (ev.status === 'DELIVERED' || ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED')) {
+        finalEv = ev;
+        break;
+      }
+      if (ev && (ev.status === 'PROCESSING' || ev.status === 'RETRYING')) {
+        steps[2].desc = `${ev.retryCount ?? 0}-ci cəhd davam edir...`;
+        renderTrackerSteps(steps);
+      }
+    } catch (e) { /* şəbəkə xətası — növbəti dövrədə yenidən sınayır */ }
+  }
+
+  if (!finalEv) {
+    steps[2].state = 'wait';
+    steps[2].desc = 'Nəticə hələ məlum deyil — bir az sonra tarixçədə görünəcək.';
+    renderTrackerSteps(steps);
+    return;
+  }
+
+  if (finalEv.status === 'DELIVERED') {
+    steps[2].state = 'ok';
+    steps[2].desc = `${finalEv.retryCount ?? 0} cəhddən sonra yerlər bron edildi`;
+    renderTrackerSteps(steps);
+    await sleep(300);
+    steps.push({state:'ok', title:'Bilet təsdiqləndi', desc:`${amount.toFixed(2)} ₼ ödənildi · ${fmtDate(finalEv.updatedAt)}`});
+  } else {
+    steps[2].state = 'fail';
+    steps[2].desc = `${finalEv.retryCount ?? 0} cəhddən sonra bron uğursuz oldu`;
+    steps[2].diag = ticketFriendlyDiagnosis(finalEv.aiDiagnostic);
+    renderTrackerSteps(steps);
+    await sleep(300);
+    steps.push({state:'fail', title:'Bron uğursuz oldu', desc:`Burada, bu sorğuda problem yarandı · ${fmtDate(finalEv.updatedAt)}`});
+  }
+  renderTrackerSteps(steps);
+  loadHistory();
+}
+
+document.getElementById('tracker-close-btn').addEventListener('click', () => {
+  document.getElementById('tracker-overlay').classList.remove('open');
+});
+document.getElementById('tracker-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'tracker-overlay') document.getElementById('tracker-overlay').classList.remove('open');
+});
+
+function updateTotal(){
+  const qty = Math.max(1, parseInt(document.getElementById('qty').value || '1', 10));
+  document.getElementById('total-value').textContent = (qty * PRICE_PER_TICKET).toFixed(2) + ' ₼';
+}
+document.getElementById('qty').addEventListener('input', updateTotal);
+
+document.getElementById('ticket-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const eventName = document.getElementById('event-name').value.trim();
+  const qty = Math.max(1, parseInt(document.getElementById('qty').value || '1', 10));
+  const amount = qty * PRICE_PER_TICKET;
+  const btn = document.getElementById('ticket-btn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/v1/webhooks/ingest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({event:'ticket.purchase', eventName, qty, amount})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      runTicketTracking(Number(data.eventId), eventName, amount);
+    } else {
+      alert('Xəta: ' + (data.message || res.status));
+    }
+  } catch (err) {
+    alert('Şəbəkə xətası: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function loadHistory(){
+  const res = await fetch('/api/v1/events');
+  const events = await res.json();
+  const tickets = events.filter(ev => {
+    try { return JSON.parse(ev.payload).event === 'ticket.purchase'; }
+    catch(e){ return false; }
+  }).slice(0, 12);
+
+  const list = document.getElementById('history-list');
+  if (tickets.length === 0) {
+    list.innerHTML = '<div class="history-empty">Hələ bron edilməyib.</div>';
+    return;
+  }
+
+  list.innerHTML = tickets.map(ev => {
+    let eventName = '—', amount = 0, qty = 0;
+    try { const p = JSON.parse(ev.payload); eventName = p.eventName || '—'; amount = p.amount || 0; qty = p.qty || 0; } catch(e){}
+    const statusClass = ev.status === 'DELIVERED' ? 'ok' : (ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED') ? 'fail' : 'pending';
+    const statusLabel = ev.status === 'DELIVERED' ? 'Təsdiqləndi' : (ev.status === 'SENT_TO_DLQ' || ev.status === 'FAILED') ? 'Uğursuz' : 'Gedir';
+    return `
+      <div class="history-item">
+        <div class="hi-left">
+          <div class="hi-title">${escapeHtml(eventName)} · ${qty} bilet</div>
+          <div class="hi-time">${fmtDate(ev.updatedAt)}</div>
+        </div>
+        <div class="hi-amount">${Number(amount).toFixed(2)} ₼</div>
+        <div class="hi-status ${statusClass}">${statusLabel}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+updateTotal();
+loadHistory();
+setInterval(loadHistory, 4000);
+</script>
+</body>
+</html>
